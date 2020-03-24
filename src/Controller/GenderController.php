@@ -8,7 +8,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -39,6 +38,21 @@ class GenderController extends AbstractController
     }
 
     /**
+     * @Route("/new", methods={"POST"})
+     */
+    public function apiNew(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $gender = new Gender($data['name']);
+
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($gender);
+        $entityManager->flush();
+
+        return $this->json($data);
+    }
+
+    /**
      * @Route("/{id}",methods={"GET"})
      */
     public function apiDetail(GenderRepository $genderRepository, $id)
@@ -57,24 +71,7 @@ class GenderController extends AbstractController
     }
 
     /**
-     * @Route("/new", methods={"POST"})
-     * @IsGranted("ROLE_ADMIN")
-     */
-    public function apiNew(Request $request)
-    {
-        $data = json_decode($request->getContent(), true);
-        $gender = new Gender($data['name']);
-
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->persist($gender);
-        $entityManager->flush();
-
-        return $this->json($data);
-    }
-
-    /**
      * @Route("/delete/{id}", methods={"DELETE"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function delete(GenderRepository $genderRepository, $id)
     {
@@ -89,7 +86,6 @@ class GenderController extends AbstractController
 
     /**
      * @Route("/edit/{id}", name="gender", methods={"PUT"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function edit(GenderRepository $genderRepository, Request $request, $id)
     {

@@ -38,6 +38,28 @@ class ActorController extends AbstractController
         return new Response($actors, 200, ['Content-Type' => 'application/json']);
     }
 
+    
+    /**
+     * @Route("/new", methods={"POST"})
+     */
+    public function apiNew(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $time = new \DateTime($data['birthday']);
+        
+        if ($data['gender'] !== true) {
+            $sexe = 'M';
+        } else { $sexe = 'F'; }
+        
+        $actor = new Actor($data['name'], $data['firstname'], $time, $sexe, $data['nationality']);
+        
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($actor);
+        $entityManager->flush();
+        
+        return $this->json($data);
+    }
+    
     /**
      * @Route("/{id}",methods={"GET"})
      */
@@ -55,32 +77,9 @@ class ActorController extends AbstractController
         ]);
         return new Response($actors, 200, ['Content-Type' => 'application/json']);
     }
-
-    /**
-     * @Route("/new", methods={"POST"})
-     * @IsGranted("ROLE_ADMIN")
-     */
-    public function apiNew(Request $request)
-    {
-        $data = json_decode($request->getContent(), true);
-        $time = new \DateTime($data['birthday']);
-
-        if ($data['gender'] !== true) {
-            $sexe = 'M';
-        } else { $sexe = 'F'; }
-
-        $actor = new Actor($data['name'], $data['firstname'], $time, $sexe, $data['nationality']);
-
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->persist($actor);
-        $entityManager->flush();
-
-        return $this->json($data);
-    }
-
+    
     /**
      * @Route("/delete/{id}", methods={"DELETE"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function delete(ActorRepository $actorRepository, $id)
     {
@@ -95,7 +94,6 @@ class ActorController extends AbstractController
 
     /**
      * @Route("/edit/{id}", name="actor", methods={"PUT"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function edit(ActorRepository $actorRepository, Request $request, $id)
     {

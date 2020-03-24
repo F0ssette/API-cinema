@@ -43,6 +43,36 @@ class MovieController extends AbstractController
     }
 
     /**
+     * @Route("/new",methods={"POST"})
+     */
+    public function apiNew(Request $request, GenderRepository $genderRepository, ActorRepository $actorRepository)
+    {
+        $encoders = [new JsonEncoder()]; // If no need for XmlEncoder
+        $normalizers = [new ObjectNormalizer()];
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $data = json_decode($request->getContent(), true);
+
+        $time = new \DateTime($data['year']);
+        $genre = $genderRepository->find($data['gender_id']);
+
+        $movie = new Movie($data['title'], $data['description'], $time, $data['picture'], $data['note'], $genre);
+
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($movie);
+        $entityManager->flush();
+
+        foreach ($data['actor'] as $actor) {
+            $actor = $actorRepository->find($actor);
+            $movie->addActor($actor);
+            $entityManager->persist($movie);
+        }
+        $entityManager->flush();
+
+        return $this->json($data);
+    }
+
+    /**
      * @Route("/{id}",methods={"GET"})
      */
     public function apiDetail(MovieRepository $movieRepository, $id): Response
@@ -62,39 +92,7 @@ class MovieController extends AbstractController
     }
 
     /**
-     * @Route("/new",methods={"POST"})
-     * @IsGranted("ROLE_ADMIN")
-     */
-    public function apiNew(Request $request, GenderRepository $genderRepository, ActorRepository $actorRepository)
-    {
-        $encoders = [new JsonEncoder()]; // If no need for XmlEncoder
-        $normalizers = [new ObjectNormalizer()];
-        $serializer = new Serializer($normalizers, $encoders);
-
-        $data = json_decode($request->getContent(), true);
-
-        $time = new \DateTime($data['year']);
-        $genre = $genderRepository->find($data['gender_id']);
-
-        $movie = new Movie($data['title'], $data['description'], $time, $data['picture'], $data['note'], $genre);
-
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->persist($movie);
-        $entityManager->flush();
-
-        foreach($data['actor'] as $actor) {
-            $actor = $actorRepository->find($actor);
-            $movie->addActor($actor);
-            $entityManager->persist($movie);
-        }
-        $entityManager->flush();
-
-        return $this->json($data);
-    }
-
-    /**
      * @Route("/edit/{id}", name="movie_edit", methods={"PUT"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function edit(MovieRepository $movieRepository, Request $request, GenderRepository $genderRepository, ActorRepository $actorRepository, $id)
     {
@@ -119,7 +117,7 @@ class MovieController extends AbstractController
         $movie->setGender($genre);
         $entityManager->flush();
 
-        foreach($data['actor'] as $actor) {
+        foreach ($data['actor'] as $actor) {
             $actor = $actorRepository->find($actor);
             $movie->addActor($actor);
             $entityManager->persist($movie);
@@ -131,7 +129,6 @@ class MovieController extends AbstractController
 
     /**
      * @Route("/delete/{id}", methods={"DELETE"})
-     * @IsGranted("ROLE_ADMIN")
      */
     public function delete(MovieRepository $movieRepository, $id)
     {
